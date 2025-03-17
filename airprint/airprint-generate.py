@@ -38,13 +38,15 @@ try:
 except:
     try:
         from xml.etree.ElementTree import Element, ElementTree, tostring
+
         etree = None
     except:
         try:
             from elementtree import Element, ElementTree, tostring
+
             etree = None
         except:
-            raise 'Failed to find python libxml or elementtree, please install one of those or use python >= 2.5'
+            raise "Failed to find python libxml or elementtree, please install one of those or use python >= 2.5"
 
 XML_TEMPLATE = """<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
 <service-group>
@@ -60,47 +62,56 @@ XML_TEMPLATE = """<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
 </service>
 </service-group>"""
 
-#TODO XXX FIXME
-#<txt-record>ty=AirPrint Ricoh Aficio MP 6000</txt-record>
-#<txt-record>Binary=T</txt-record>
-#<txt-record>Duplex=T</txt-record>
-#<txt-record>Copies=T</txt-record>
+# TODO XXX FIXME
+# <txt-record>ty=AirPrint Ricoh Aficio MP 6000</txt-record>
+# <txt-record>Binary=T</txt-record>
+# <txt-record>Duplex=T</txt-record>
+# <txt-record>Copies=T</txt-record>
 
 
 DOCUMENT_TYPES = {
     # These content-types will be at the front of the list
-    'application/pdf': True,
-    'application/postscript': True,
-    'application/vnd.cups-raster': True,
-    'application/octet-stream': True,
-    'image/urf': True,
-    'image/png': True,
-    'image/tiff': True,
-    'image/png': True,
-    'image/jpeg': True,
-    'image/gif': True,
-    'text/plain': True,
-    'text/html': True,
-
+    "application/pdf": True,
+    "application/postscript": True,
+    "application/vnd.cups-raster": True,
+    "application/octet-stream": True,
+    "image/urf": True,
+    "image/png": True,
+    "image/tiff": True,
+    "image/png": True,
+    "image/jpeg": True,
+    "image/gif": True,
+    "text/plain": True,
+    "text/html": True,
     # These content-types will never be reported
-    'image/x-xwindowdump': False,
-    'image/x-xpixmap': False,
-    'image/x-xbitmap': False,
-    'image/x-sun-raster': False,
-    'image/x-sgi-rgb': False,
-    'image/x-portable-pixmap': False,
-    'image/x-portable-graymap': False,
-    'image/x-portable-bitmap': False,
-    'image/x-portable-anymap': False,
-    'application/x-shell': False,
-    'application/x-perl': False,
-    'application/x-csource': False,
-    'application/x-cshell': False,
+    "image/x-xwindowdump": False,
+    "image/x-xpixmap": False,
+    "image/x-xbitmap": False,
+    "image/x-sun-raster": False,
+    "image/x-sgi-rgb": False,
+    "image/x-portable-pixmap": False,
+    "image/x-portable-graymap": False,
+    "image/x-portable-bitmap": False,
+    "image/x-portable-anymap": False,
+    "application/x-shell": False,
+    "application/x-perl": False,
+    "application/x-csource": False,
+    "application/x-cshell": False,
 }
 
+
 class AirPrintGenerate(object):
-    def __init__(self, host=None, user=None, port=None, verbose=False,
-        directory=None, prefix='AirPrint-', adminurl=False, descName=False):
+    def __init__(
+        self,
+        host=None,
+        user=None,
+        port=None,
+        verbose=False,
+        directory=None,
+        prefix="AirPrint-",
+        adminurl=False,
+        descName=False,
+    ):
         self.host = host
         self.user = user
         self.port = port
@@ -109,10 +120,10 @@ class AirPrintGenerate(object):
         self.prefix = prefix
         self.adminurl = adminurl
         self.descName = descName
-        
+
         if self.user:
             cups.setUser(self.user)
-    
+
     def generate(self):
         if not self.host:
             conn = cups.Connection()
@@ -120,172 +131,240 @@ class AirPrintGenerate(object):
             if not self.port:
                 self.port = 631
             conn = cups.Connection(self.host, self.port)
-            
+
         printers = conn.getPrinters()
-        
+
         for p, v in printers.items():
-            if v['printer-is-shared']:
+            if v["printer-is-shared"]:
                 attrs = conn.getPrinterAttributes(p)
-                uri = urlparse(v['printer-uri-supported'])
+                uri = urlparse(v["printer-uri-supported"])
 
                 tree = ElementTree()
-                tree.parse(StringIO(XML_TEMPLATE.replace('\n', '').replace('\r', '').replace('\t', '')))
+                tree.parse(
+                    StringIO(
+                        XML_TEMPLATE.replace("\n", "")
+                        .replace("\r", "")
+                        .replace("\t", "")
+                    )
+                )
 
-                name = tree.find('name')
-		
+                name = tree.find("name")
+
                 if self.descName:
-                   name.text = '%s' % (v['printer-info'])
+                    name.text = "%s" % (v["printer-info"])
                 else:
-                   name.text = 'AirPrint %s @ %%h' % (p)
+                    name.text = "AirPrint %s @ %%h" % (p)
 
-                service = tree.find('service')
+                service = tree.find("service")
 
-                port = service.find('port')
+                port = service.find("port")
                 port_no = None
-                if hasattr(uri, 'port'):
-                  port_no = uri.port
+                if hasattr(uri, "port"):
+                    port_no = uri.port
                 if not port_no:
                     port_no = self.port
                 if not port_no:
                     port_no = cups.getPort()
-                port.text = '%d' % port_no
+                port.text = "%d" % port_no
 
-                if hasattr(uri, 'path'):
-                  rp = uri.path
+                if hasattr(uri, "path"):
+                    rp = uri.path
                 else:
-                  rp = uri[2]
-                
-                re_match = re.match(r'^//(.*):(\d+)(/.*)', rp)
+                    rp = uri[2]
+
+                re_match = re.match(r"^//(.*):(\d+)(/.*)", rp)
                 if re_match:
-                  rp = re_match.group(3)
-                
-                #Remove leading slashes from path
-                #TODO XXX FIXME I'm worried this will match broken urlparse
-                #results as well (for instance if they don't include a port)
-                #the xml would be malform'd either way
-                rp = re.sub(r'^/+', '', rp)
-                
-                path = Element('txt-record')
-                path.text = 'rp=%s' % (rp)
+                    rp = re_match.group(3)
+
+                # Remove leading slashes from path
+                # TODO XXX FIXME I'm worried this will match broken urlparse
+                # results as well (for instance if they don't include a port)
+                # the xml would be malform'd either way
+                rp = re.sub(r"^/+", "", rp)
+
+                path = Element("txt-record")
+                path.text = "rp=%s" % (rp)
                 service.append(path)
 
-                desc = Element('txt-record')
+                desc = Element("txt-record")
                 if self.descName:
-                  desc.text = 'note=%s' % (v['printer-location'])
+                    desc.text = "note=%s" % (v["printer-location"])
                 else:
-                  desc.text = 'note=%s' % (v['printer-info'])
+                    desc.text = "note=%s" % (v["printer-info"])
                 service.append(desc)
 
-                if 'color-supported' in attrs and attrs['color-supported'] == True:
-                    color = Element('txt-record')
-                    color.text = 'Color=T'
+                if "color-supported" in attrs and attrs["color-supported"] == True:
+                    color = Element("txt-record")
+                    color.text = "Color=T"
                     service.append(color)
 
-                if 'media-default' in attrs and attrs['media-default'] == 'iso_a4_210x297mm':
-                    max_paper = Element('txt-record')
-                    max_paper.text = 'PaperMax=legal-A4'
+                if (
+                    "media-default" in attrs
+                    and attrs["media-default"] == "iso_a4_210x297mm"
+                ):
+                    max_paper = Element("txt-record")
+                    max_paper.text = "PaperMax=legal-A4"
                     service.append(max_paper)
 
-                product = Element('txt-record')
-                product.text = 'product=(GPL Ghostscript)'
+                product = Element("txt-record")
+                product.text = "product=(GPL Ghostscript)"
                 service.append(product)
 
-                state = Element('txt-record')
-                state.text = 'printer-state=%s' % (v['printer-state'])
+                state = Element("txt-record")
+                state.text = "printer-state=%s" % (v["printer-state"])
                 service.append(state)
 
-                ptype = Element('txt-record')
-                ptype.text = 'printer-type=%s' % (hex(v['printer-type']))
+                ptype = Element("txt-record")
+                ptype.text = "printer-type=%s" % (hex(v["printer-type"]))
                 service.append(ptype)
 
-                pdl = Element('txt-record')
+                pdl = Element("txt-record")
                 fmts = []
                 defer = []
 
-                for a in attrs['document-format-supported']:
+                for a in attrs["document-format-supported"]:
                     if a in DOCUMENT_TYPES:
                         if DOCUMENT_TYPES[a]:
                             fmts.append(a)
                     else:
                         defer.append(a)
 
-                if 'image/urf' not in fmts:
-                    sys.stderr.write('image/urf is not in mime types, %s may not be available on ios6 (see https://github.com/tjfontaine/airprint-generate/issues/5)%s' % (p, os.linesep))
+                if "image/urf" not in fmts:
+                    sys.stderr.write(
+                        "image/urf is not in mime types, %s may not be available on ios6 (see https://github.com/tjfontaine/airprint-generate/issues/5)%s"
+                        % (p, os.linesep)
+                    )
 
-                fmts = ','.join(fmts+defer)
+                fmts = ",".join(fmts + defer)
 
                 dropped = []
 
                 # TODO XXX FIXME all fields should be checked for 255 limit
-                while len('pdl=%s' % (fmts)) >= 255:
-                    (fmts, drop) = fmts.rsplit(',', 1)
+                while len("pdl=%s" % (fmts)) >= 255:
+                    (fmts, drop) = fmts.rsplit(",", 1)
                     dropped.append(drop)
 
                 if len(dropped) and self.verbose:
-                    sys.stderr.write('%s Losing support for: %s%s' % (p, ','.join(dropped), os.linesep))
+                    sys.stderr.write(
+                        "%s Losing support for: %s%s"
+                        % (p, ",".join(dropped), os.linesep)
+                    )
 
-                pdl.text = 'pdl=%s' % (fmts)
+                pdl.text = "pdl=%s" % (fmts)
                 service.append(pdl)
 
                 if self.adminurl:
-                    admin = Element('txt-record')
-                    admin.text = 'adminurl=%s' % (v['printer-uri-supported'])
+                    admin = Element("txt-record")
+                    admin.text = "adminurl=%s" % (v["printer-uri-supported"])
                     service.append(admin)
-                
-                fname = '%s%s.service' % (self.prefix, p)
-                
+
+                fname = "%s%s.service" % (self.prefix, p)
+
                 if self.directory:
                     fname = os.path.join(self.directory, fname)
-                
 
                 if etree:
                     etree.indent(tree)
-                    tree.write(fname, pretty_print=True, xml_declaration=True, encoding="UTF-8")
+                    tree.write(
+                        fname, pretty_print=True, xml_declaration=True, encoding="UTF-8"
+                    )
                 else:
-                    f = open(fname, 'w')
+                    f = open(fname, "w")
                     xmlstr = tostring(tree.getroot())
                     doc = parseString(xmlstr)
-                    dt= minidom.getDOMImplementation('').createDocumentType('service-group', None, 'avahi-service.dtd')
+                    dt = minidom.getDOMImplementation("").createDocumentType(
+                        "service-group", None, "avahi-service.dtd"
+                    )
                     doc.insertBefore(dt, doc.documentElement)
                     doc.writexml(f)
                     f.close()
-                
-                if self.verbose:
-                    sys.stderr.write('Created: %s%s' % (fname, os.linesep))
 
-if __name__ == '__main__':
+                if self.verbose:
+                    sys.stderr.write("Created: %s%s" % (fname, os.linesep))
+
+
+if __name__ == "__main__":
     parser = optparse.OptionParser()
-    parser.add_option('-H', '--host', action="store", type="string",
-        dest='hostname', help='Hostname of CUPS server (optional)', metavar='HOSTNAME')
-    parser.add_option('-P', '--port', action="store", type="int",
-        dest='port', help='Port number of CUPS server', metavar='PORT')
-    parser.add_option('-u', '--user', action="store", type="string",
-        dest='username', help='Username to authenticate with against CUPS',
-        metavar='USER')
-    parser.add_option('-d', '--directory', action="store", type="string",
-        dest='directory', help='Directory to create service files',
-        metavar='DIRECTORY')
-    parser.add_option('-v', '--verbose', action="store_true", dest="verbose",
-        help="Print debugging information to STDERR")
-    parser.add_option('-p', '--prefix', action="store", type="string",
-        dest='prefix', help='Prefix all files with this string', metavar='PREFIX',
-        default='AirPrint-')
-    parser.add_option('-a', '--admin', action="store_true", dest="adminurl",
-        help="Include the printer specified uri as the adminurl")
-    parser.add_option('-x', '--desc', action="store_true", dest="descName",
-        help="Use CUPS description as the printer display name")
-    
+    parser.add_option(
+        "-H",
+        "--host",
+        action="store",
+        type="string",
+        dest="hostname",
+        help="Hostname of CUPS server (optional)",
+        metavar="HOSTNAME",
+    )
+    parser.add_option(
+        "-P",
+        "--port",
+        action="store",
+        type="int",
+        dest="port",
+        help="Port number of CUPS server",
+        metavar="PORT",
+    )
+    parser.add_option(
+        "-u",
+        "--user",
+        action="store",
+        type="string",
+        dest="username",
+        help="Username to authenticate with against CUPS",
+        metavar="USER",
+    )
+    parser.add_option(
+        "-d",
+        "--directory",
+        action="store",
+        type="string",
+        dest="directory",
+        help="Directory to create service files",
+        metavar="DIRECTORY",
+    )
+    parser.add_option(
+        "-v",
+        "--verbose",
+        action="store_true",
+        dest="verbose",
+        help="Print debugging information to STDERR",
+    )
+    parser.add_option(
+        "-p",
+        "--prefix",
+        action="store",
+        type="string",
+        dest="prefix",
+        help="Prefix all files with this string",
+        metavar="PREFIX",
+        default="AirPrint-",
+    )
+    parser.add_option(
+        "-a",
+        "--admin",
+        action="store_true",
+        dest="adminurl",
+        help="Include the printer specified uri as the adminurl",
+    )
+    parser.add_option(
+        "-x",
+        "--desc",
+        action="store_true",
+        dest="descName",
+        help="Use CUPS description as the printer display name",
+    )
+
     (options, args) = parser.parse_args()
-    
+
     # TODO XXX FIXME -- if cups login required, need to add
     # air=username,password
     from getpass import getpass
+
     cups.setPasswordCB(getpass)
-    
+
     if options.directory:
         if not os.path.exists(options.directory):
             os.mkdir(options.directory)
-    
+
     apg = AirPrintGenerate(
         user=options.username,
         host=options.hostname,
@@ -294,7 +373,7 @@ if __name__ == '__main__':
         directory=options.directory,
         prefix=options.prefix,
         adminurl=options.adminurl,
-        descName=options.descName
+        descName=options.descName,
     )
-    
+
     apg.generate()

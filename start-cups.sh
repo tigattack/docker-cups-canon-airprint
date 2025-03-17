@@ -35,10 +35,10 @@ if [ $(grep -ci ${CUPS_ADMIN_USER} /etc/shadow) -eq 0 ]; then
     if [[ ${?} -ne 0 ]]; then RETURN=${?}; REASON="Failed to set password ${CUPS_ADMIN_PASSWORD} for user root, aborting!"; exit; fi
 fi
 
-### prepare cups configuration: log everything to stderr
-sed -i 's/^.*AccessLog .*/AccessLog stderr/' /etc/cups/cups-files.conf
+### prepare cups configuration: log everything to stdout/stderr
+sed -i 's/^.*AccessLog .*/AccessLog stdout/' /etc/cups/cups-files.conf
 sed -i 's/^.*ErrorLog .*/ErrorLog stderr/' /etc/cups/cups-files.conf
-sed -i 's/^.*PageLog .*/PageLog stderr/' /etc/cups/cups-files.conf
+sed -i 's/^.*PageLog .*/PageLog stdout/' /etc/cups/cups-files.conf
 if [ "yes" = "${CUPS_REMOTE_ADMIN}" -a -z "$(grep "^Listen \*:631" /etc/cups/cupsd.conf)" ]; then
   [ -z "$(grep "^Listen localhost:631" /etc/cups/cupsd.conf)" ] &&
     echo "Listen *:631" >> /etc/cups/cupsd.conf ||

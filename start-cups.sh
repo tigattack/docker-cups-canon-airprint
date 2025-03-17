@@ -31,11 +31,13 @@ fi
 
 ### create admin user if it does not exist
 if [ $(grep -ci ${CUPS_ADMIN_USER} /etc/shadow) -eq 0 ]; then
-    useradd ${CUPS_ADMIN_USER} --system -g lpadmin --no-create-home --password $(mkpasswd ${CUPS_ADMIN_PASSWORD})
-    if [[ ${?} -ne 0 ]]; then RETURN=${?}; REASON="Failed to set password ${CUPS_ADMIN_PASSWORD} for user root, aborting!"; exit; fi
+  echo "-->  Creating CUPS admin user '${CUPS_ADMIN_USER}'..."
+  useradd ${CUPS_ADMIN_USER} --system -g lpadmin --no-create-home --password $(mkpasswd ${CUPS_ADMIN_PASSWORD})
+  if [[ ${?} -ne 0 ]]; then RETURN=${?}; REASON="Failed to set password ${CUPS_ADMIN_PASSWORD} for user root, aborting!"; exit; fi
 fi
 
 ### prepare cups configuration: log everything to stdout/stderr
+echo -e "\n-->  Patching CUPS configs..."
 sed -i 's/^.*AccessLog .*/AccessLog stdout/' /etc/cups/cups-files.conf
 sed -i 's/^.*ErrorLog .*/ErrorLog stderr/' /etc/cups/cups-files.conf
 sed -i 's/^.*PageLog .*/PageLog stdout/' /etc/cups/cups-files.conf
@@ -62,6 +64,7 @@ if [ -n "${CUPS_SSL_CERT}" -a -n "${CUPS_SSL_KEY}" ]; then
 fi
 
 ### prepare avahi-daemon configuration (dbus disabled by default)
+echo -e "\n-->  Patching avahi config..."
 if [ -n "${AVAHI_INTERFACES}" ]; then
   sed -i "s/^.*allow-interfaces=.*/allow-interfaces=${AVAHI_INTERFACES}/" /etc/avahi/avahi-daemon.conf
 fi
@@ -82,9 +85,11 @@ else # or a command
 fi
 
 # start automatic printer refresh for avahi
+echo -e "\n-->  Launching avahi-generate watch script..."
 /opt/airprint/printer-update.sh &
 
 # ensure avahi is running in background (but not as daemon as this implies syslog)
+echo -e "\n-->  Launching avahi-daemon..."
 (
 while (true); do
   /usr/sbin/avahi-daemon -c || { /usr/sbin/avahi-daemon & }
@@ -94,10 +99,11 @@ done
 sleep 1
 
 ### configure CUPS (background subshell, wait till cups http is running...)
+echo -e "\n-->  Configuring CUPS..."
 (
 until cupsctl -h localhost:631 --share-printers > /dev/null 2>&1; do echo -n "."; sleep 1; done;
 until cupsctl --debug-logging > /dev/null 2>&1; do echo -n "."; sleep 1; done;
-echo "--> CUPS ready"
+echo -e "\n-->  CUPS ready"
 [ "yes" = "${CUPS_ENV_DEBUG}" ] && cupsctl --debug-logging || cupsctl --no-debug-logging
 [ "yes" = "${CUPS_REMOTE_ADMIN}" ] && cupsctl --remote-admin --remote-any || cupsctl --no-remote-admin
 [ "yes" = "${CUPS_SHARE_PRINTERS}" ] && cupsctl --share-printers || cupsctl --no-share-printers
@@ -106,12 +112,12 @@ cupsctl ServerName=${CUPS_HOSTNAME}
 cupsctl LogLevel=${CUPS_LOGLEVEL}
 cupsctl AccessLogLevel=${CUPS_ACCESS_LOGLEVEL}
 # setup printers (run each CUPS_LPADMIN_PRINTER* command)
-echo "--> adding printers"
+echo -e "\n-->  Adding printers"
 for v in $(set |grep ^CUPS_LPADMIN_PRINTER |sed -e 's/^\(CUPS_LPADMIN_PRINTER[^=]*\).*/\1/' |sort |tr '\n' ' '); do
   echo "$v = $(eval echo "\$$v")"
   eval $(eval echo "\$$v")
 done
-echo "--> CUPS configured"
+echo -e "\n-->  CUPS configured"
 ) &
 
 (sleep 2;

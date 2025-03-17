@@ -1,58 +1,55 @@
-ARG UBUNTU_VERSION=noble
+FROM debian:stable-slim AS driver_dl
 
-FROM ubuntu:$UBUNTU_VERSION as kyocera-builder
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get -y upgrade
-RUN apt-get -y install \
-      libcupsimage2-dev \
-      libcups2-dev \
-      libc6-dev \
-      gcc \
-      cmake \
-      git
-RUN git clone https://github.com/eLtMosen/rastertokpsl-re.git
-WORKDIR /rastertokpsl-re
-RUN git checkout cbac20651fe1a40ad258397dc055254b92490054
-RUN cmake -B_build -H. && cmake --build _build/
+ARG DEBIAN_FRONTEND=noninteractive
+ARG CNIJFILTER2_URL=https://gdlp01.c-wss.com/gds/0/0100012300/02/cnijfilter2-6.80-1-deb.tar.gz
 
-FROM ubuntu:$UBUNTU_VERSION as arm64-base
-FROM ubuntu:$UBUNTU_VERSION as arm-base
-FROM ubuntu:$UBUNTU_VERSION as amd64-base
-COPY --from=kyocera-builder --chmod=0555 /rastertokpsl-re/bin/rastertokpsl-re /usr/lib/cups/filter/rastertokpsl
-RUN mkdir -p /usr/share/cups/model/Kyocera
-COPY --from=kyocera-builder /rastertokpsl-re/*.ppd /usr/share/cups/model/Kyocera/
+RUN apt update &&\
+    apt install -y wget &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    mkdir /tmp/drivers
 
-FROM ${TARGETARCH}-base
-MAINTAINER drpsychick@drsick.net
+# Download and extract cnijfilter2 package
+RUN wget -q -O /tmp/cnijfilter2.deb.tar.gz "${CNIJFILTER2_URL}" &&\
+    tar -xvf /tmp/cnijfilter2.deb.tar.gz -C /tmp &&\
+    for i in $(find /tmp/cnijfilter2-* -name "*.deb"); do \
+        file=$(basename "$i" | sed -E 's/(cnijfilter2)_[0-9.]+-[0-9]+(_.*\.deb)/\1\2/'); \
+        mv -v "$i" "/tmp/drivers/$file"; \
+    done &&\
+    ls -l /tmp/drivers
 
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get -y upgrade
-ARG UBUNTU_VERSION
-RUN apt-get -y install \
-      cups-daemon \
-      cups-client \
-      cups-pdf \
-      printer-driver-all \
-      openprinting-ppds \
-      hpijs-ppds \
-      hp-ppd \
-      hplip \
-      avahi-daemon \
-      libnss-mdns \
+FROM debian:stable-slim
+
+ARG TARGETARCH
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt update &&\
+    apt -y install \
+    cups-daemon \
+    cups-client \
+    cups-pdf \
+    avahi-daemon \
+    libnss-mdns \
+# for cnijfilter2
+    libcupsimage2 \
+    libxml2 \
 # for mkpasswd
-      whois \
-      curl \
-      inotify-tools \
-      $(if [ "noble" = "$UBUNTU_VERSION" -o "latest" = "$UBUNTU_VERSION" ]; then \
-      echo "libpng16-16t64"; else echo "libpng16-16"; fi) \
-      python3-cups \
-      samba-client \
-      cups-tea4cups \
+    whois \
+# for healthcheck
+    curl \
+# for avahi/airprint
+    inotify-tools \
+    libpng16-16 \
+    python3-cups \
+    cups-tea4cups \
     && apt-get autoremove -y \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
     && rm -rf /var/tmp/*
+
+# Add and install cnijfilter2 package
+RUN --mount=type=bind,from=driver_dl,source=/tmp/drivers,target=/tmp/drivers \
+    dpkg -i /tmp/drivers/cnijfilter2_${TARGETARCH}.deb
 
 # TODO: really needed?
 #COPY mime/ /etc/cups/mime/
@@ -76,7 +73,7 @@ ENV TZ="GMT" \
     # defaults to $(hostname -i)
     CUPS_IP="" \
     CUPS_ACCESS_LOGLEVEL="config" \
-    # example: lpadmin -p Epson-RX520 -D 'my RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -v smb://user:pass@host/Epson-RX520"
+    # example: lpadmin -p Epson-RX520 -D 'my RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -v ipp://10.1.2.3/"
     CUPS_LPADMIN_PRINTER1=""
 
 ENTRYPOINT ["/root/start-cups.sh"]

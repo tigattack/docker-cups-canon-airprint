@@ -55,14 +55,6 @@ if [ -n "${CUPS_SSL_CERT}" -a -n "${CUPS_SSL_KEY}" ]; then
   echo -e "${CUPS_SSL_KEY}" > /etc/cups/ssl/${CUPS_HOSTNAME}.key
 fi
 
-# smbspool fix for smb auth bug: https://bugzilla.redhat.com/show_bug.cgi?id=1700791
-mv /usr/bin/smbspool /usr/bin/smbspool.orig
-echo '#!/bin/sh
-cat <&0| /usr/bin/smbspool.orig $DEVICE_URI "$1" "$2" "$3" "$4" "$5"
-exit 0
-' > /usr/bin/smbspool
-chmod +x /usr/bin/smbspool
-
 ### prepare avahi-daemon configuration (dbus disabled by default)
 if [ -n "${AVAHI_INTERFACES}" ]; then
   sed -i "s/^.*allow-interfaces=.*/allow-interfaces=${AVAHI_INTERFACES}/" /etc/avahi/avahi-daemon.conf

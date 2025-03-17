@@ -59,7 +59,6 @@ Set any number of variables which start with `CUPS_LPADMIN_PRINTER`. These will 
 ```shell script
 CUPS_LPADMIN_PRINTER1=lpadmin -p test -D 'Test printer' -m raw -v ipp://myhost/printer
 CUPS_LPADMIN_PRINTER2=lpadmin -p second -D 'another' -m everywhere -v ipp://myhost/second
-CUPS_LPADMIN_PRINTER3=lpadmin -p third -D 'samba printer' -m '..the right driver string...' -o PageSize=A4 -v smb://user:pass@host/printer
 CUPS_LPADMIN_PRINTER3_ENABLE=cupsenable third
 ```
 
@@ -128,13 +127,12 @@ The preferred way to configure your container, but it has limitations.
 ```shell script
 # search for your printer
 lpinfo --make-and-model "Epson Stylus Photo RX" -m
-# I chose RX620 for my RX520 and it works fine...
-lpadmin -p Epson-RX520 -D 'Epson Stylus Photo RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -v smb://user:pass@host/Epson-RX520
+lpadmin -p Epson-RX520 -D 'Epson Stylus Photo RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -v ipp://10.1.2.3/
 ```
 
 Pass `lpadmin` command via environment
 ```shell script
-docker ... -e CUPS_LPADMIN_PRINTER1="lpadmin -p Epson-RX520 -D 'Epson Stylus Photo RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -o PageSize=A4 -v smb://user:pass@host/Epson-RX520" ...
+docker ... -e CUPS_LPADMIN_PRINTER1="lpadmin -p Epson-RX520 -D 'Epson Stylus Photo RX520' -m 'gutenprint.5.3://escp2-rx620/expert' -o PageSize=A4 -v ipp://10.1.2.3/" ...
 ```
 
 Find and set printer specific options

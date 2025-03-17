@@ -43,6 +43,12 @@ if [ "yes" = "${CUPS_REMOTE_ADMIN}" -a -z "$(grep "^Listen \*:631" /etc/cups/cup
   [ -z "$(grep "^Listen localhost:631" /etc/cups/cupsd.conf)" ] &&
     echo "Listen *:631" >> /etc/cups/cupsd.conf ||
     sed -i 's/Listen localhost:631/Listen *:631/' /etc/cups/cupsd.conf
+
+    if grep -q 'ServerAlias' /etc/cups/cupsd.conf; then
+      sed -i 's/^.*ServerAlias.*/ServerAlias */' /etc/cups/cupsd.conf
+    else
+      echo "ServerAlias *" >> /etc/cups/cupsd.conf
+    fi
 fi
 # own SSL cert:
 # CreateSelfSignedCerts no

@@ -117,8 +117,8 @@ echo "--> CUPS configured"
 (sleep 2;
 cat <<EOF
 ===========================================================
-The dockerized CUPS instance is now ready for use! The web
-interface is available here:
+The CUPS instance is now ready for use!
+The web interface is available here:
 URL:       http://${CUPS_IP}:631/ or http://${CUPS_HOSTNAME}:631/
 Username:  ${CUPS_ADMIN_USER}
 Password:  ${CUPS_ADMIN_PASSWORD}

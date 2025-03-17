@@ -1,18 +1,12 @@
-# Simple AirPrint bridge for your local printers
+# docker-cups-canon-airprint
 
-[![Docker image](https://img.shields.io/docker/image-size/drpsychick/airprint-bridge?sort=date)](https://hub.docker.com/r/drpsychick/airprint-bridge/tags)
-[![Build status](https://img.shields.io/circleci/build/github/SickHub/docker-cups-airprint)](https://app.circleci.com/pipelines/github/SickHub/docker-cups-airprint)
-[![license](https://img.shields.io/github/license/sickhub/docker-cups-airprint.svg)](https://github.com/sickhub/docker-cups-airprint/blob/master/LICENSE)
-[![DockerHub pulls](https://img.shields.io/docker/pulls/drpsychick/airprint-bridge.svg)](https://hub.docker.com/r/drpsychick/airprint-bridge/)
-[![DockerHub stars](https://img.shields.io/docker/stars/drpsychick/airprint-bridge.svg)](https://hub.docker.com/r/drpsychick/airprint-bridge/)
-[![GitHub stars](https://img.shields.io/github/stars/sickhub/docker-cups-airprint.svg)](https://github.com/sickhub/docker-cups-airprint)
-[![Contributors](https://img.shields.io/github/contributors/sickhub/docker-cups-airprint.svg)](https://github.com/sickhub/docker-cups-airprint/graphs/contributors)
-[![Paypal](https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=FTXDN7LCDWUEA&source=url)
-[![GitHub Sponsor](https://img.shields.io/badge/github-sponsor-blue?logo=github)](https://github.com/sponsors/DrPsychick)
+> [!NOTE]
+> This fork is modified & maintained for my own personal use cases.
+> As such, I have no plans to address feature requests or bugs that don't affect my own usage.
 
 ## Purpose
-Run a container with CUPS and Avahi (mDNS/Bonjour) so that local printers
-on the network can be exposed via AirPrint to iOS/macOS devices.
+
+Run a container with CUPS, Avahi (mDNS/Bonjour), and Canon IJ (cnijfilter2) drivers so that local Canon printers can be exposed via AirPrint.
 
 ## Requirements
 * must run on a linux host (could not yet figure out a way to run `macvlan` on macOS: https://github.com/docker/for-mac/issues/3447)
@@ -20,11 +14,6 @@ on the network can be exposed via AirPrint to iOS/macOS devices.
 with other services listen on the ports required
 (macOS: already runs CUPS and mdns, Linux: mostly also already runs CUPS and/or Avahi)
 * you must have CUPS drivers available for your printer.
-  * Please poke me when you know how to use the Windows drivers of a shared printer with CUPS as "proxy" (no CUPS drivers)
-
-### Hints
-* a shared Windows printer must be accessible by anonymous users (without login)
-or you must provide a username and password whithin its device URI (`smb://user:pass@host/printer`)
 
 ## Play with it
 -> NOT WORKING on macOS! (https://docs.docker.com/docker-for-mac/networking/#per-container-ip-addressing-is-not-possible)
@@ -180,34 +169,6 @@ WebInterface Yes
 </Location>
 ```
 Then go to `https://$cups_ip:631/admin` or `https://$cups_name:631`, login and setup your printer(s).
-
-### Automated through files
-This is easiest combined with the webinterface:
-1. setup your printer through the webinterface or `lpadmin` and test it
-2. take the `printers.conf` and `.ppd` files from the container and automate it
- 
- ```shell script
-# get `printers.conf` and `.ppd` file from the container
-docker cp cups-test:/etc/cups/printers.conf ~/mycups/
-docker cp cups-test:/etc/cups/ppd/PrinterName.ppd ~/mycups/
-```
-
-Use your own docker image:
-
-`~/mycups/Dockerfile`:
-```Dockerfile
-FROM drpsychick/airprint-bridge:latest
-
-COPY printers.conf /etc/cups/
-COPY PrinterName.ppd /etc/cups/ppd
-```
-
-And create the container using your own image:
-```shell script
-docker build -t mycups:latest .
-docker create --name cups-real [...] mycups:latest
-docker start cups-real
-```
 
 ## Test it
 1. on any macOS device, add a new printer. You'll find your printer prefixed with `AirPrint` in the `default` tab

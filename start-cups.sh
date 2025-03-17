@@ -14,6 +14,7 @@ CUPS_SHARE_PRINTERS=${CUPS_SHARE_PRINTERS:-"yes"}
 CUPS_REMOTE_ADMIN=${CUPS_REMOTE_ADMIN:-"yes"}
 CUPS_ACCESS_LOGLEVEL=${CUPS_ACCESS_LOGLEVEL:-"config"}
 CUPS_LOGLEVEL=${CUPS_LOGLEVEL:-"warn"}
+CUPS_NO_FORCE_SSL=${CUPS_NO_FORCE_SSL:-""}
 CUPS_SSL_CERT=${CUPS_SSL_CERT:-""}
 CUPS_SSL_KEY=${CUPS_SSL_KEY:-""}
 AVAHI_INTERFACES=${AVAHI_INTERFACES:=""}
@@ -51,6 +52,13 @@ if [ "yes" = "${CUPS_REMOTE_ADMIN}" -a -z "$(grep "^Listen \*:631" /etc/cups/cup
     else
       echo "ServerAlias *" >> /etc/cups/cupsd.conf
     fi
+fi
+if [ "true" = "${CUPS_NO_FORCE_SSL}" ]; then
+  if grep -q 'DefaultEncryption' /etc/cups/cupsd.conf; then
+    sed -i 's/^.*DefaultEncryption.*/DefaultEncryption Never/' /etc/cups/cupsd.conf
+  else
+    echo "DefaultEncryption Never" >> /etc/cups/cupsd.conf
+  fi
 fi
 # own SSL cert:
 # CreateSelfSignedCerts no

@@ -40,6 +40,7 @@ RUN apt update &&\
     inotify-tools \
     libpng16-16 \
     python3-cups \
+    python3-lxml \
     cups-tea4cups &&\
     apt autoremove -y &&\
     apt clean -y &&\

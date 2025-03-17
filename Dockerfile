@@ -40,12 +40,12 @@ RUN apt update &&\
     inotify-tools \
     libpng16-16 \
     python3-cups \
-    cups-tea4cups \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
+    cups-tea4cups &&\
+    apt autoremove -y &&\
+    apt clean -y &&\
+    rm -rf /var/lib/apt/lists/* &&\
+    rm -rf /tmp/* &&\
+    rm -rf /var/tmp/*
 
 # Add and install cnijfilter2 package
 RUN --mount=type=bind,from=driver_dl,source=/tmp/drivers,target=/tmp/drivers \
@@ -57,11 +57,12 @@ RUN --mount=type=bind,from=driver_dl,source=/tmp/drivers,target=/tmp/drivers \
 # setup airprint scripts
 COPY airprint/ /opt/airprint/
 
-COPY healthcheck.sh /
-COPY start-cups.sh /root/
-COPY pre-init-script.sh /root/
-RUN chmod +x /healthcheck.sh /root/start-cups.sh /root/pre-init-script.sh
-HEALTHCHECK --interval=10s --timeout=3s CMD /healthcheck.sh
+COPY healthcheck.sh start-cups.sh pre-init-script.sh /root/
+RUN chmod +x /root/*.sh
+HEALTHCHECK \
+    --interval=10s \
+    --timeout=3s \
+    CMD /root/healthcheck.sh
 
 ENV TZ="GMT" \
     CUPS_ADMIN_USER="admin" \

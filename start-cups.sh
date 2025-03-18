@@ -112,7 +112,7 @@ echo -e "\n-->  Launching printer idle check script..."
 sleep 1
 
 echo -e "\n-->  Patching Tea4CUPS config"
-sed -i "s/PRINTER_NAME_PLACEHOLDER/"${PRINTER_POWERON_NAME}"/" /etc/cups/tea4cups.conf
+sed -i "s/PRINTER_NAME_PLACEHOLDER/${PRINTER_POWERON_NAME}/" /etc/cups/tea4cups.conf
 
 ### configure CUPS (background subshell, wait till cups http is running...)
 echo -e "\n-->  Configuring CUPS..."

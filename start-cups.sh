@@ -111,6 +111,9 @@ echo -e "\n-->  Launching printer idle check script..."
 /opt/power_scripts/printer_idle_check.sh &
 sleep 1
 
+echo -e "\n-->  Patching Tea4CUPS config"
+sed -i "s/PRINTER_NAME_PLACEHOLDER/"${PRINTER_POWERON_NAME}"/" /etc/cups/tea4cups.conf
+
 ### configure CUPS (background subshell, wait till cups http is running...)
 echo -e "\n-->  Configuring CUPS..."
 (
@@ -132,9 +135,6 @@ for v in $(set |grep ^CUPS_LPADMIN_PRINTER |sed -e 's/^\(CUPS_LPADMIN_PRINTER[^=
 done
 echo -e "\n-->  CUPS configured"
 ) &
-
-echo -e "\n-->  Patching Tea4CUPS config..."
-sed -i "s/PRINTER_NAME_PLACEHOLDER/"${PRINTER_POWERON_NAME}"/" /etc/cups/tea4cups.conf
 
 (sleep 2;
 cat <<EOF

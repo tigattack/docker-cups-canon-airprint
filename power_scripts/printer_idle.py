@@ -71,14 +71,7 @@ class PrinterIdle:
 
     @property
     def last_job_time(self):
-        last_job_time = self.get_last_job_time()
-        if last_job_time is None:
-            log.debug(
-                "No jobs found when checking last job time for printer %s",
-                self.printer_name,
-            )
-            return None
-        return last_job_time
+        return self.get_last_job_time()
 
     @property
     def is_idle(self):

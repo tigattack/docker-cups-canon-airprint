@@ -70,7 +70,7 @@ def wait_for_printer(
 def main():
     webhook_url = os.getenv("PRINTER_POWERON_WEBHOOK_URL")
     printer_host = os.getenv("PRINTER_POWERON_HOST")
-    printer_name = os.getenv("PRINTER_POWERON_NAME", "Printer")
+    printer_name = os.getenv("PRINTER_POWERON_NAME")
     wait_timeout = int(os.getenv("PRINTER_POWERON_WAIT_TIMEOUT", 120))
 
     if not webhook_url:
@@ -79,6 +79,10 @@ def main():
 
     if not printer_host:
         log.error("PRINTER_POWERON_HOST environment variable is not set.")
+        return
+
+    if not printer_name:
+        log.error("PRINTER_POWERON_NAME environment variable is not set.")
         return
 
     send_webhook(webhook_url, printer_name)

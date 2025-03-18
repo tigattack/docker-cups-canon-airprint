@@ -24,6 +24,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update &&\
     apt -y --no-install-recommends install \
+    ca-certificates \
     cups-daemon \
     cups-client \
     cups-pdf \
@@ -58,8 +59,17 @@ COPY mime/ /etc/cups/mime/
 # setup airprint scripts
 COPY airprint/ /opt/airprint/
 
+# setup printer power scripts
+COPY power_scripts/ /opt/power_scripts/
+
 COPY healthcheck.sh start-cups.sh pre-init-script.sh /root/
-RUN chmod +x /root/*.sh
+
+RUN ["/bin/bash", \
+    "-c", \
+    "chmod +x /root/*.sh &&\
+    chmod +x /opt/airprint/*.{sh,py} &&\
+    chmod +x /opt/power_scripts/*.{sh,py}"]
+
 HEALTHCHECK \
     --interval=10s \
     --timeout=3s \

@@ -106,6 +106,11 @@ done
 ) &
 sleep 1
 
+# start printer idle check script
+echo -e "\n-->  Launching printer idle check script..."
+/opt/power_scripts/printer_idle_check.sh &
+sleep 1
+
 ### configure CUPS (background subshell, wait till cups http is running...)
 echo -e "\n-->  Configuring CUPS..."
 (

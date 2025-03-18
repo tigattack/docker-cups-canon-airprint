@@ -1,0 +1,183 @@
+#!/usr/bin/python3
+
+import http.client
+import json
+import logging
+import os
+from datetime import datetime, timedelta
+from typing import Any
+from urllib.parse import urlparse
+
+import cups
+
+log_level = os.getenv("PRINTER_IDLE_LOGLEVEL", "INFO")
+try:
+    log_level = getattr(logging, log_level.upper())
+except AttributeError:
+    print(f"Invalid log level: {log_level} - Defaulting to INFO")
+    log_level = logging.INFO
+
+logging.basicConfig(level=log_level)
+log = logging.getLogger("printer_idle")
+
+
+class PrinterIdle:
+    def __init__(self, printer_name: str, idle_timeout: int):
+        self.conn = cups.Connection()
+        self.printer_name = printer_name
+        self.idle_timeout = idle_timeout
+
+        if printer_name == "":
+            printers = self.get_printers().keys()
+            if len(printers) == 0:
+                raise ValueError("Printer name not defined and no printers found.")
+            if len(printers) > 1:
+                raise ValueError(
+                    f"Printer name not defined and multiple printers were found: {list(printers)}"
+                )
+            self.printer_name = list(printers)[0]
+
+    def get_printers(self) -> dict[str, Any]:
+        printers: dict[str, Any] = self.conn.getPrinters()
+        return printers
+
+    def check_printer(self):
+        printers = self.get_printers()
+        if self.printer_name not in printers:
+            raise ValueError(f"Printer {self.printer_name} not found")
+        return True
+
+    def get_last_job_time(self):
+        jobs: dict[int, Any] = self.conn.getJobs(which_jobs="completed")
+        for jid, _ in jobs.items():
+            job_attrs = self.conn.getJobAttributes(jid)
+
+            printer_uri: str = job_attrs.get("job-printer-uri")
+            job_time: str = job_attrs.get("time-at-completed")
+
+            if printer_uri.endswith(self.printer_name) and job_time is not None:
+                return datetime.fromtimestamp(job_time)
+        return None
+
+    def check_idle(self):
+        if self.last_job_time is None:
+            log.debug(
+                "Idle time undefined for printer %s. Printer must be idle.",
+                self.printer_name,
+            )
+            return True
+        idle_time = datetime.now() - self.last_job_time
+        return idle_time > timedelta(seconds=self.idle_timeout)
+
+    @property
+    def last_job_time(self):
+        last_job_time = self.get_last_job_time()
+        if last_job_time is None:
+            log.debug(
+                "No jobs found when checking last job time for printer %s",
+                self.printer_name,
+            )
+            return None
+        return last_job_time
+
+    @property
+    def is_idle(self):
+        return self.check_idle()
+
+
+def send_webhook(webhook_url: str, printer_name: str, is_idle: bool, idle_time: int):
+    webhook_body = json.dumps(
+        {"printer": printer_name, "idle": is_idle, "idle_time": idle_time}
+    )
+
+    webhook_scheme = urlparse(webhook_url).scheme
+    webhook_host = urlparse(webhook_url, "http").hostname
+    if webhook_scheme == "https":
+        conn = http.client.HTTPSConnection(webhook_host)
+    else:
+        conn = http.client.HTTPConnection(webhook_host)
+
+    log.debug("Sending info to webhook: %s", webhook_body)
+    try:
+        conn.request(
+            "POST",
+            webhook_url,
+            webhook_body,
+        )
+        response = conn.getresponse()
+        log.debug("Webhook responded %s %s", response.status, response.reason)
+    except Exception as e:
+        log.error("Error sending webhook: %s", e)
+        response = None
+    finally:
+        conn.close()
+    return response
+
+
+def main():
+    # Comma-seperated list of printer names as set in CUPS. Only required if multiple printers are available.
+    printers = os.getenv("PRINTER_IDLE_PRINTERS", "")
+    # Seconds since last job to consider printer idle.
+    idle_timeout = os.getenv("PRINTER_IDLE_TIMEOUT", 3600)
+    # Webhook URL to send idle printer information to.
+    webhook_url = os.getenv("PRINTER_IDLE_WEBHOOK_URL")
+
+    printers = printers.split(",")
+
+    for printer_name in printers:
+        try:
+            printer = PrinterIdle(printer_name, int(idle_timeout))
+        except ValueError as exc:
+            log.error("An error occured setting up the idle check: %s", exc)
+            continue
+        except RuntimeError:
+            log.warning("Failed to connect to CUPS. The service may not be running.")
+            continue
+
+        try:
+            printer.check_printer()
+        except ValueError as exc:
+            log.error("Skipping printer: %s", exc)
+            continue
+
+        if not printer_name:
+            printer_name = printer.printer_name
+
+        idle_time = 0
+        if not printer.is_idle:
+            log.info(f"Printer {printer_name} is not idle")
+        else:
+            last_job_time = printer.last_job_time
+            if last_job_time is None:
+                idle_time_human = "Unknown (no jobs found, must be idle)"
+            else:
+                idle_time = datetime.now() - last_job_time
+                idle_time_human = f"{idle_time.days}d {idle_time.seconds // 3600}h {idle_time.seconds % 3600 // 60}m"
+
+            log.info(f"Printer {printer_name} has been idle for {idle_time_human}.")
+
+        if webhook_url is None:
+            log.info("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
+            return
+
+        idle_seconds = (
+            int(idle_time.total_seconds()) if isinstance(idle_time, timedelta) else 0
+        )
+        log.debug("Sending webhook for idle printer")
+        webhook_response = send_webhook(
+            webhook_url,
+            printer_name,
+            printer.is_idle,
+            idle_seconds,
+        )
+        if webhook_response is None:
+            log.error("Webhook request failed.")
+            return
+        elif webhook_response.status != 200:
+            log.error("Webhook responded with status %s", webhook_response.status)
+            return
+        log.info("Webhook sent successfully")
+
+
+if __name__ == "__main__":
+    main()

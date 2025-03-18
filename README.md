@@ -60,6 +60,7 @@ Here's a sample of the webhook body: `{"printer": "MyPrinter", "idle": true, "id
 * `PRINTER_IDLE_PRINTERS` (default: null): Comma-seperated list of printer names as set in CUPS. Only required if multiple printers are available.
 * `PRINTER_IDLE_THRESHOLD` (default: `3600`): Seconds since last job to consider printer idle.
 * `PRINTER_IDLE_WEBHOOK_URL` (default: null): Webhook URL to send idle printer information to.
+* `PRINTER_IDLE_CHECK_INTERVAL` (default: `60`): Idle check/send interval in seconds.
 * `PRINTER_IDLE_LOGLEVEL` (default: `INFO`): Can be any valid Python logging level. Likely `DEBUG` is the only other useful option here, though.
 
 #### `printer_power_on.py`

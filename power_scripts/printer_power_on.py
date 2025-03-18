@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import http.client
+import json
 import logging
 import os
 import socket
@@ -8,7 +9,7 @@ import sys
 import time
 from urllib.parse import urlparse
 
-log_level = os.getenv("PRINTER_IDLE_LOGLEVEL", "INFO")
+log_level = os.getenv("PRINTER_POWERON_LOGLEVEL", "INFO")
 try:
     log_level = getattr(logging, log_level.upper())
 except AttributeError:
@@ -19,7 +20,7 @@ logging.basicConfig(level=log_level)
 log = logging.getLogger("printer_webhook_monitor")
 
 
-def send_webhook(webhook_url: str):
+def send_webhook(webhook_url: str, printer_name: str):
     webhook_scheme = urlparse(webhook_url, "http").scheme
     webhook_host = urlparse(webhook_url).hostname
     webhook_path = urlparse(webhook_url).path
@@ -31,7 +32,12 @@ def send_webhook(webhook_url: str):
 
     try:
         log.info("Triggering webhook...")
-        conn.request("POST", webhook_path)
+        conn.request(
+            "POST",
+            webhook_path,
+            json.dumps({"power_on": printer_name}),
+            {"Content-Type": "application/json"},
+        )
         response = conn.getresponse()
         log.debug("Webhook responded: %s %s", response.status, response.reason)
     except Exception as e:
@@ -63,19 +69,19 @@ def wait_for_printer(
 
 def main():
     webhook_url = os.getenv("PRINTER_POWERON_WEBHOOK_URL")
-    printer_host = os.getenv("PRINTER_HOST")
-    printer_name = os.getenv("PRINTER_NAME", "Printer")
-    wait_timeout = int(os.getenv("PRINTER_WAIT_TIMEOUT", 120))
+    printer_host = os.getenv("PRINTER_POWERON_HOST")
+    printer_name = os.getenv("PRINTER_POWERON_NAME", "Printer")
+    wait_timeout = int(os.getenv("PRINTER_POWERON_WAIT_TIMEOUT", 120))
 
     if not webhook_url:
         log.error("PRINTER_POWERON_WEBHOOK_URL environment variable is not set.")
         return
 
     if not printer_host:
-        log.error("PRINTER_HOST environment variable is not set.")
+        log.error("PRINTER_POWERON_HOST environment variable is not set.")
         return
 
-    send_webhook(webhook_url)
+    send_webhook(webhook_url, printer_name)
     printer_alive = wait_for_printer(printer_host, printer_name, timeout=wait_timeout)
 
     if not printer_alive:

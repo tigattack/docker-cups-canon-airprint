@@ -22,10 +22,10 @@ log = logging.getLogger("printer_idle")
 
 
 class PrinterIdle:
-    def __init__(self, printer_name: str, idle_timeout: int):
+    def __init__(self, printer_name: str, idle_threshold: int):
         self.conn = cups.Connection()
         self.printer_name = printer_name
-        self.idle_timeout = idle_timeout
+        self.idle_threshold = idle_threshold
 
         if printer_name == "":
             printers = self.get_printers().keys()
@@ -67,7 +67,7 @@ class PrinterIdle:
             )
             return True
         idle_time = datetime.now() - self.last_job_time
-        return idle_time > timedelta(seconds=self.idle_timeout)
+        return idle_time > timedelta(seconds=self.idle_threshold)
 
     @property
     def last_job_time(self):
@@ -103,6 +103,7 @@ def send_webhook(webhook_url: str, printer_name: str, is_idle: bool, idle_time: 
             "POST",
             webhook_url,
             webhook_body,
+            {"Content-Type": "application/json"},
         )
         response = conn.getresponse()
         log.debug("Webhook responded %s %s", response.status, response.reason)
@@ -118,7 +119,7 @@ def main():
     # Comma-seperated list of printer names as set in CUPS. Only required if multiple printers are available.
     printers = os.getenv("PRINTER_IDLE_PRINTERS", "")
     # Seconds since last job to consider printer idle.
-    idle_timeout = os.getenv("PRINTER_IDLE_TIMEOUT", 3600)
+    idle_threshold = os.getenv("PRINTER_IDLE_THRESHOLD", 3600)
     # Webhook URL to send idle printer information to.
     webhook_url = os.getenv("PRINTER_IDLE_WEBHOOK_URL")
 
@@ -126,7 +127,7 @@ def main():
 
     for printer_name in printers:
         try:
-            printer = PrinterIdle(printer_name, int(idle_timeout))
+            printer = PrinterIdle(printer_name, int(idle_threshold))
         except ValueError as exc:
             log.error("An error occured setting up the idle check: %s", exc)
             continue

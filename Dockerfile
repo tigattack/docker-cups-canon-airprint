@@ -62,6 +62,9 @@ COPY airprint/ /opt/airprint/
 # setup printer power scripts
 COPY power_scripts/ /opt/power_scripts/
 
+# setup tea4cups config
+COPY cups/tea4cups.conf /etc/cups/
+
 COPY healthcheck.sh start-cups.sh pre-init-script.sh /root/
 
 RUN ["/bin/bash", \

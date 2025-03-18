@@ -63,9 +63,7 @@ XML_TEMPLATE = """<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
 </service-group>"""
 
 # TODO XXX FIXME
-# <txt-record>ty=AirPrint Ricoh Aficio MP 6000</txt-record>
 # <txt-record>Binary=T</txt-record>
-# <txt-record>Duplex=T</txt-record>
 # <txt-record>Copies=T</txt-record>
 
 
@@ -217,6 +215,18 @@ class AirPrintGenerate(object):
                 ptype = Element("txt-record")
                 ptype.text = "printer-type=%s" % (hex(v["printer-type"]))
                 service.append(ptype)
+
+                make_model = Element("txt-record")
+                make_model.text = "ty=%s" % (v["printer-make-and-model"])
+                service.append(make_model)
+
+                # duplex supported if any of the strings in the list attrs["sides-supported"] starts with 'two-sided'
+                duplex_supported = any(
+                    [s for s in attrs["sides-supported"] if s.startswith("two-sided")]
+                )
+                duplex = Element("txt-record")
+                duplex.text = "Duplex=%s" % ("T" if duplex_supported else "F")
+                service.append(duplex)
 
                 pdl = Element("txt-record")
                 fmts = []

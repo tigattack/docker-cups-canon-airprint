@@ -23,7 +23,7 @@ ARG TARGETARCH
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt update &&\
-    apt -y install \
+    apt -y --no-install-recommends install \
     cups-daemon \
     cups-client \
     cups-pdf \

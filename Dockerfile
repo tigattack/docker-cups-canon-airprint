@@ -53,7 +53,7 @@ RUN --mount=type=bind,from=driver_dl,source=/tmp/drivers,target=/tmp/drivers \
     dpkg -i /tmp/drivers/cnijfilter2_${TARGETARCH}.deb
 
 # TODO: really needed?
-#COPY mime/ /etc/cups/mime/
+COPY mime/ /etc/cups/mime/
 
 # setup airprint scripts
 COPY airprint/ /opt/airprint/

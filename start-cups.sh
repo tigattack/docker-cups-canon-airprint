@@ -134,7 +134,7 @@ echo -e "\n-->  CUPS configured"
 ) &
 
 echo -e "\n-->  Patching Tea4CUPS config..."
-sed -i "s/PRINTER_NAME_PLACEHOLDER/"${TEA4CUPS_PRINTER_NAME}"/" /etc/cups/tea4cups.conf
+sed -i "s/PRINTER_NAME_PLACEHOLDER/"${PRINTER_POWERON_NAME}"/" /etc/cups/tea4cups.conf
 
 (sleep 2;
 cat <<EOF

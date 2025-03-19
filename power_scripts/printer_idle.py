@@ -140,17 +140,18 @@ def main():
             printer_name = printer.printer_name
 
         idle_time = 0
-        if not printer.is_idle:
-            log.info(f"Printer {printer_name} is not idle")
+        last_job_time = printer.last_job_time
+        if last_job_time is None:
+            idle_time_human = "Unknown (no jobs found, must be idle)"
         else:
-            last_job_time = printer.last_job_time
-            if last_job_time is None:
-                idle_time_human = "Unknown (no jobs found, must be idle)"
-            else:
-                idle_time = datetime.now() - last_job_time
-                idle_time_human = f"{idle_time.days}d {idle_time.seconds // 3600}h {idle_time.seconds % 3600 // 60}m"
+            idle_time = datetime.now() - last_job_time
+            idle_time_human = f"{idle_time.days}d {idle_time.seconds // 3600}h {idle_time.seconds % 3600 // 60}m"
 
+        if printer.is_idle:
             log.info(f"Printer {printer_name} has been idle for {idle_time_human}.")
+        else:
+            idle_time = 0
+            log.info(f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago.")
 
         if webhook_url is None:
             log.info("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")

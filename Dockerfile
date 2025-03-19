@@ -37,12 +37,15 @@ RUN apt update &&\
     whois \
 # for healthcheck
     curl \
-# for avahi/airprint
+# for airprint and power scripts
     inotify-tools \
     libpng16-16 \
     python3-cups \
     python3-lxml \
-    cups-tea4cups &&\
+    # for power scripts
+    cups-tea4cups \
+# for tea4cups
+    python3-requests &&\
     apt autoremove -y &&\
     apt clean -y &&\
     rm -rf /var/lib/apt/lists/* &&\

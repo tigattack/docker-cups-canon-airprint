@@ -53,7 +53,7 @@ There are two scripts packaged with this image. See below for a description of e
 
 This POSTed data can be used by e.g. Home Assistant to determine when the printer is idle and power off a smart plug.
 
-Here's a sample of the webhook body: `{"printer": "MyPrinter", "idle": true, "idle_time": 43680}`
+Here's a sample of the webhook body: `{"printer": "MyPrinter", "idle": true, "idle_time": 43680, "last_job_time": 1742350946}`
 
 **Variables:**
 

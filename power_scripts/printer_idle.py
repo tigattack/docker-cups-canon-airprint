@@ -79,17 +79,19 @@ class PrinterIdle:
 
 
 def send_webhook(webhook_url: str, printer_name: str, is_idle: bool, idle_time: int):
+    parsed_url = urlparse(webhook_url)
+    webhook_scheme = parsed_url.scheme
+    webhook_host = parsed_url.hostname
+    webhook_port = parsed_url.port or (443 if parsed_url.scheme == "https" else 80)
+
+    if webhook_scheme == "https":
+        conn = http.client.HTTPSConnection(webhook_host, webhook_port)
+    else:
+        conn = http.client.HTTPConnection(webhook_host, webhook_port)
+
     webhook_body = json.dumps(
         {"printer": printer_name, "idle": is_idle, "idle_time": idle_time}
     )
-
-    webhook_scheme = urlparse(webhook_url).scheme
-    webhook_host = urlparse(webhook_url, "http").hostname
-    if webhook_scheme == "https":
-        conn = http.client.HTTPSConnection(webhook_host)
-    else:
-        conn = http.client.HTTPConnection(webhook_host)
-
     log.debug("Sending info to webhook: %s", webhook_body)
     try:
         conn.request(

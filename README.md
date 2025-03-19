@@ -86,10 +86,11 @@ Here's a sample of the webhook body: `{"power_on": "MyPrinter"}`
 
 1. Set `CUPS_LOGLEVEL=debug`
 2. Set `TEA4CUPS_DEBUG=yes`
-3. Look for log output between the following two lines in the CUPS error stream:
+3. Set `PRINTER_POWERON_LOGLEVEL=debug`
+4. Look for log output between the following two lines in the CUPS error stream:
   1. `Begin forked Prehooks`
   2. `End forked Prehooks`
-4. Good luck.
+5. Good luck.
 
 ### Add printer through ENV
 Set any number of variables which start with `CUPS_LPADMIN_PRINTER`. These will be executed at startup to setup printers through `lpadmin`.

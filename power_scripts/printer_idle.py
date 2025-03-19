@@ -79,7 +79,13 @@ class PrinterIdle:
         return self.check_idle()
 
 
-def send_webhook(webhook_url: str, printer_name: str, is_idle: bool, idle_time: int, last_job_time: datetime | None):
+def send_webhook(
+    webhook_url: str,
+    printer_name: str,
+    is_idle: bool,
+    idle_time: int,
+    last_job_time: datetime | None,
+):
     parsed_url = urlparse(webhook_url)
     webhook_scheme = parsed_url.scheme
     webhook_host = parsed_url.hostname
@@ -92,7 +98,12 @@ def send_webhook(webhook_url: str, printer_name: str, is_idle: bool, idle_time: 
 
     last_job_timestamp = 0 if last_job_time is None else int(last_job_time.timestamp())
     webhook_body = json.dumps(
-        {"printer": printer_name, "idle": is_idle, "idle_time": idle_time, "last_job_time": last_job_timestamp}
+        {
+            "printer": printer_name,
+            "idle": is_idle,
+            "idle_time": idle_time,
+            "last_job_time": last_job_timestamp,
+        }
     )
     log.debug("Sending info to webhook: %s", webhook_body)
     try:
@@ -161,7 +172,9 @@ def main():
             idle_time = 0
             if last_state != "active":
                 log.info(f"Printer {printer_name} has changed to active state.")
-            log.debug(f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago.")
+            log.debug(
+                f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago."
+            )
 
         if webhook_url is None:
             log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")

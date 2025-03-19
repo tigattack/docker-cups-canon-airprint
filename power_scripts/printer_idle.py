@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -140,6 +141,10 @@ def main():
         if not printer_name:
             printer_name = printer.printer_name
 
+        state_path = Path(f"/run/printer_idle_{printer_name.lower()}.state")
+        last_state = state_path.read_text().strip() if state_path.exists() else None
+        state_path.write_text("idle" if printer.is_idle else "active")
+
         idle_time = 0
         last_job_time = printer.last_job_time
         if last_job_time is None:
@@ -149,13 +154,17 @@ def main():
             idle_time_human = f"{idle_time.days}d {idle_time.seconds // 3600}h {idle_time.seconds % 3600 // 60}m"
 
         if printer.is_idle:
-            log.info(f"Printer {printer_name} has been idle for {idle_time_human}.")
+            if last_state != "idle":
+                log.info(f"Printer {printer_name} has changed to idle state.")
+            log.debug(f"Printer {printer_name} has been idle for {idle_time_human}.")
         else:
             idle_time = 0
-            log.info(f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago.")
+            if last_state != "active":
+                log.info(f"Printer {printer_name} has changed to active state.")
+            log.debug(f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago.")
 
         if webhook_url is None:
-            log.info("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
+            log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
             return
 
         idle_seconds = (
@@ -175,7 +184,7 @@ def main():
         elif webhook_response.status != 200:
             log.error("Webhook responded with status %s", webhook_response.status)
             return
-        log.info("Webhook sent successfully")
+        log.debug("Webhook sent successfully")
 
 
 if __name__ == "__main__":

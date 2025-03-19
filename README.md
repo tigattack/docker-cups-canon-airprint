@@ -88,8 +88,8 @@ Here's a sample of the webhook body: `{"power_on": "MyPrinter"}`
 2. Set `TEA4CUPS_DEBUG=yes`
 3. Set `PRINTER_POWERON_LOGLEVEL=debug`
 4. Look for log output between the following two lines in the CUPS error stream:
-  1. `Begin forked Prehooks`
-  2. `End forked Prehooks`
+    1. `Begin forked Prehooks`
+    2. `End forked Prehooks`
 5. Good luck.
 
 ### Add printer through ENV

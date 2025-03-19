@@ -111,8 +111,19 @@ echo -e "\n-->  Launching printer idle check script..."
 /opt/power_scripts/printer_idle_check.sh &
 sleep 1
 
-echo -e "\n-->  Patching Tea4CUPS config"
+echo -e "\n-->  Configuring tea4cups..."
+TEA4CUPS_DEBUG=${TEA4CUPS_DEBUG:-"no"}
+sed -i "s/^.*debug : .*/debug : ${TEA4CUPS_DEBUG}/" /etc/cups/tea4cups.conf
 sed -i "s/PRINTER_NAME_PLACEHOLDER/${PRINTER_POWERON_NAME}/" /etc/cups/tea4cups.conf
+
+# Write printer poweron configs to secrets files since system environment isn't accessible by tea4cups hook scripts.
+mkdir -p /run/secrets
+echo ${PRINTER_POWERON_WEBHOOK_URL:="undef"} > /run/secrets/tea4cups-poweron-webhook-url
+chmod 600 /run/secrets/tea4cups-poweron-webhook-url
+echo "Wrote PRINTER_POWERON_WEBHOOK_URL to secrets file."
+echo ${PRINTER_POWERON_HOST:="undef"} > /run/secrets/tea4cups-poweron-host
+chmod 600 /run/secrets/tea4cups-poweron-host
+echo "Wrote PRINTER_POWERON_HOST to secrets file."
 
 ### configure CUPS (background subshell, wait till cups http is running...)
 echo -e "\n-->  Configuring CUPS..."

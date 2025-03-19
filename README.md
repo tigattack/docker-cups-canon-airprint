@@ -76,10 +76,20 @@ Here's a sample of the webhook body: `{"power_on": "MyPrinter"}`
 **Variables:**
 
 * `PRINTER_POWERON_NAME` (default: null): Printer name, as set in CUPS, for which power on requests should be sent.
-* `PRINTER_POWERON_HOST` (default: null): Printer IP or hostname to use when waiting for printer to become available.
+* `PRINTER_POWERON_HOST` (default: null): Printer IP or hostname. This is only used as a fallback when it can't be discovered from the tea4cups environment, where the script assumes it will find an IPP or HTTP printer. The printer host is used to check for printer availability.
 * `PRINTER_POWERON_WAIT_TIMEOUT` (default: `120`): How long to wait for the printer to become available.
 * `PRINTER_POWERON_WEBHOOK_URL` (default: null): Webhook URL to send printer power on request to.
 * `PRINTER_POWERON_LOGLEVEL` (default: `INFO`): Can be any valid Python logging level. Likely `DEBUG` is the only other useful option here, though.
+* `TEA4CUPS_DEBUG` (default: `no`): tea4cups will produce debug messages via CUPS' error logs if this variable is `yes`. Must be `yes` or `no`.
+
+**Troubleshooting:**
+
+1. Set `CUPS_LOGLEVEL=debug`
+2. Set `TEA4CUPS_DEBUG=yes`
+3. Look for log output between the following two lines in the CUPS error stream:
+  1. `Begin forked Prehooks`
+  2. `End forked Prehooks`
+4. Good luck.
 
 ### Add printer through ENV
 Set any number of variables which start with `CUPS_LPADMIN_PRINTER`. These will be executed at startup to setup printers through `lpadmin`.

@@ -22,6 +22,13 @@ logging.basicConfig(level=log_level)
 log = logging.getLogger("printer_idle")
 
 
+def strtobool(value: str) -> bool:
+    value = value.lower()
+    if value in ("y", "yes", "on", "1", "true", "t"):
+        return True
+    return False
+
+
 class PrinterIdle:
     def __init__(self, printer_name: str, idle_threshold: int):
         self.conn = cups.Connection()
@@ -130,6 +137,8 @@ def main():
     idle_threshold = os.getenv("PRINTER_IDLE_THRESHOLD", 3600)
     # Webhook URL to send idle printer information to.
     webhook_url = os.getenv("PRINTER_IDLE_WEBHOOK_URL")
+    # Whether to always send the webhook even if the state hasn't changed
+    always_post_state = strtobool(os.getenv("PRINTER_IDLE_ALWAYS_SEND", "false"))
 
     printers = printers.split(",")
 
@@ -176,28 +185,35 @@ def main():
                 f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago."
             )
 
-        if webhook_url is None:
-            log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
-            return
+        if (
+            (printer.is_idle and last_state != "idle")
+            or (not printer.is_idle and last_state != "active")
+            or always_post_state
+        ):
+            if webhook_url is None:
+                log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
+                return
 
-        idle_seconds = (
-            int(idle_time.total_seconds()) if isinstance(idle_time, timedelta) else 0
-        )
-        log.debug("Sending webhook for idle printer")
-        webhook_response = send_webhook(
-            webhook_url,
-            printer_name,
-            printer.is_idle,
-            idle_seconds,
-            last_job_time,
-        )
-        if webhook_response is None:
-            log.error("Webhook request failed.")
-            return
-        elif webhook_response.status != 200:
-            log.error("Webhook responded with status %s", webhook_response.status)
-            return
-        log.debug("Webhook sent successfully")
+            idle_seconds = (
+                int(idle_time.total_seconds())
+                if isinstance(idle_time, timedelta)
+                else 0
+            )
+            log.debug("Sending webhook for idle printer")
+            webhook_response = send_webhook(
+                webhook_url,
+                printer_name,
+                printer.is_idle,
+                idle_seconds,
+                last_job_time,
+            )
+            if webhook_response is None:
+                log.error("Webhook request failed.")
+                return
+            elif webhook_response.status != 200:
+                log.error("Webhook responded with status %s", webhook_response.status)
+                return
+            log.debug("Webhook sent successfully")
 
 
 if __name__ == "__main__":

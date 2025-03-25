@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+# https://github.com/tigattack/docker-cups-canon-airprint
+# https://gist.github.com/tigattack/3d54b842d6c842b6fa40618ff6279a1a
 
 import http.client
 import json

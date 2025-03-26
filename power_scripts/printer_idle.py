@@ -200,6 +200,9 @@ def main():
                 log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
                 return
 
+            if state_changed:
+                log.debug("Printer state has changed from %s to %s", last_state, current_state)
+
             if not state_changed and always_post_state:
                 log.debug(
                     "State has not changed from %s, but PRINTER_IDLE_ALWAYS_SEND is true, so sending anyway.",

@@ -166,7 +166,8 @@ def main():
 
         state_path = Path(f"/run/printer_idle_{printer_name.lower()}.state")
         last_state = state_path.read_text().strip() if state_path.exists() else None
-        state_path.write_text("idle" if printer.is_idle else "active")
+        current_state = "idle" if printer.is_idle else "active"
+        state_path.write_text(current_state)
 
         idle_time = 0
         last_job_time = printer.last_job_time
@@ -188,9 +189,7 @@ def main():
                 f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago."
             )
 
-        state_changed = (printer.is_idle and last_state == "idle") or (
-            not printer.is_idle and last_state == "active"
-        )
+        state_changed = last_state != current_state
 
         if not state_changed and not always_post_state:
             log.debug(

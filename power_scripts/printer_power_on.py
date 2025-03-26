@@ -44,7 +44,12 @@ def send_webhook(webhook_url: str, printer_name: str):
         conn.request(
             "POST",
             webhook_path,
-            json.dumps({"power_on": printer_name}),
+            json.dumps(
+                {
+                    "power_on": printer_name,
+                    "source": "cups",
+                }
+            ),
             {"Content-Type": "application/json"},
         )
         response = conn.getresponse()

@@ -112,6 +112,7 @@ def send_webhook(
             "idle": is_idle,
             "idle_time": idle_time,
             "last_job_time": last_job_timestamp,
+            "source": "cups",
         }
     )
     log.debug("Sending info to webhook: %s", webhook_body)

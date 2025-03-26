@@ -187,14 +187,24 @@ def main():
                 f"Printer {printer_name} is not idle. Last job completed {idle_time_human} ago."
             )
 
-        if (
-            (printer.is_idle and last_state != "idle")
-            or (not printer.is_idle and last_state != "active")
-            or always_post_state
-        ):
+        state_changed = (printer.is_idle and last_state == "idle") or (
+            not printer.is_idle and last_state == "active"
+        )
+
+        if not state_changed and not always_post_state:
+            log.debug(
+                "Skipping webhook - Printer state has not changed from %s", last_state
+            )
+        else:
             if webhook_url is None:
                 log.warning("Skipping webhook - PRINTER_IDLE_WEBHOOK_URL unset.")
                 return
+
+            if not state_changed and always_post_state:
+                log.debug(
+                    "State has not changed from %s, but PRINTER_IDLE_ALWAYS_SEND is true, so sending anyway.",
+                    last_state,
+                )
 
             idle_seconds = (
                 int(idle_time.total_seconds())
